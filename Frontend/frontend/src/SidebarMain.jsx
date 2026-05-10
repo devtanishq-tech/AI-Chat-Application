@@ -1,5 +1,5 @@
 import "./SidebarMain.css";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect } from "react";
 import axios from "axios";
 import { MyContext } from "./Mycontext";
 import { v4 as uuidv4 } from "uuid";
@@ -20,7 +20,7 @@ export default function SidebarMain({ isOpen, onClose }) {
   const openSpecificData = async (threadID) => {
     try {
       const res = await axios.get(
-        `http://localhost:8080/chat/thread/${threadID}`,
+        `${import.meta.env.VITE_BACKEND_URL}/chat/thread/${threadID}`,
       );
       const specificChat = res.data.messages;
       setreply(null);
@@ -47,7 +47,9 @@ export default function SidebarMain({ isOpen, onClose }) {
   // ---- Fetch all threads when currentID changes --------------
   const getAllthread = async () => {
     try {
-      const response = await axios.get("http://localhost:8080/chat/thread");
+      const response = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/chat/thread`,
+      );
       const dataneeded = response.data.map((t) => ({
         threadId: t.threadId,
         title: t.title,
@@ -60,7 +62,7 @@ export default function SidebarMain({ isOpen, onClose }) {
   //=============================Delete Function //=========================
   const handleDelete = async (threadId) => {
     let dThread = await axios.delete(
-      `http://localhost:8080/chat/thread/${threadId}`,
+      `${import.meta.env.VITE_BACKEND_URL}/chat/thread/${threadId}`,
     );
     setallthread((prev) =>
       prev.filter((thread) => thread.threadId !== threadId),

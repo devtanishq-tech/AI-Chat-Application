@@ -34,7 +34,7 @@ export default function ChatWindow({ onOpenSidebar }) {
 
     try {
       const res = await axios.post(
-        "http://localhost:8080/chat/ai",
+        `${import.meta.env.VITE_BACKEND_URL}/chat/ai`,
         { threadID: currentID, message: prompt },
         { signal: controllerRef.current.signal },
       );

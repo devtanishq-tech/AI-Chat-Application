@@ -1,11 +1,9 @@
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
-import { GoogleGenAI } from "@google/genai";
 import mongoose from "mongoose";
 
 import { Groq_API } from "./utils/groq.js";
-import { create } from "node:domain";
 import chat from "./routes/chat.js";
 import { message, threads } from "./models/OverAllScheam.js";
 import { threadId } from "node:worker_threads";
@@ -24,10 +22,18 @@ const createConnection = async () => {
 
 // const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const app = express();
-const port = 8080;
+const port = 8080 || process.env.port;
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "ai-chat-application-snowy.vercel.app"],
+    credentials: true,
+  }),
+);
 //====================================Routes Sections===================================
+app.get("/", (req, res) => {
+  res.send("Backend Running Successfully");
+});
 app.use("/chat", chat);
 app.post("/chat/ai", async (req, res) => {
   try {
