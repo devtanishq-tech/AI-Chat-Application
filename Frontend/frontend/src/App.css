@@ -1,0 +1,54 @@
+/* ================================================================
+   App.css
+   WHY: html/body/root must be jailed to the viewport so the page
+   never grows taller than 100vh. Without this, any child with
+   height:100% has nothing to anchor to and the body scrolls.
+================================================================ */
+
+/* --- Reset & Viewport Jail ---
+   We zero out all default margins/paddings with box-sizing globally,
+   then lock html + body + #root to exactly the viewport height.
+   overflow:hidden on html prevents the rubber-band / body-scroll
+   that plagued the original layout. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  height: 100%;
+  overflow: hidden; /* no body scrollbar ever */
+}
+
+body {
+  height: 100%;
+  overflow: hidden;
+  background-color: #212121;
+  /* DM Sans: clean, modern, not generic – distinct from Inter/Roboto */
+  font-family: "DM Sans", "Segoe UI", system-ui, sans-serif;
+  color: #ececec;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* --- App Shell ---
+   The outermost flex row: sidebar | chat-window.
+   height:100% inherits from #root which is locked to 100vh.
+   overflow:hidden is the second guard against any accidental bleed. */
+.app {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background-color: #212121;
+}

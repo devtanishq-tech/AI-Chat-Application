@@ -1,0 +1,373 @@
+/* ================================================================
+   ChatWindow.css
+   WHY: ChatWindow is the right column of the app shell. It must:
+   1. Fill all remaining width (flex:1)
+   2. Never overflow horizontally (min-width:0)
+   3. Be a flex column so navbar + Chat + bottomSection stack
+   4. Clip any overflow (overflow:hidden)
+   All child scroll regions are handled by the children themselves.
+================================================================ */
+
+/* ---- Chat Window Shell ------------------------------------- */
+.chatWindow {
+  flex: 1;
+  min-width: 0; /* WHY: without this, flex children refuse to
+                             shrink below their content width, causing
+                             horizontal overflow */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: #212121;
+  position: relative;
+}
+
+/* ================================================================
+   NAVBAR
+   WHY flex-shrink:0: navbar must never compress. It stays at exactly
+   its natural height at all times regardless of content below it.
+================================================================ */
+.navbarr {
+  flex-shrink: 0;
+  height: 56px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background-color: #212121;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  /* WHY z-index: sits above chat messages when they scroll under it */
+  z-index: 10;
+  position: relative;
+}
+
+/* Mobile hamburger — hidden on desktop */
+.hamburger-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: #ececec;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.18s ease;
+  flex-shrink: 0;
+}
+
+.hamburger-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.hamburger-btn i {
+  font-size: 16px;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-left span {
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  color: #ececec;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s ease;
+}
+
+.nav-left span:hover {
+  color: #ffffff;
+}
+
+.nav-left span i {
+  font-size: 12px;
+  color: #888;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ---- Share Button ------------------------------------------ */
+.share-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: #ececec;
+  cursor: pointer;
+  font-size: 13.5px;
+  font-weight: 500;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease;
+  white-space: nowrap;
+}
+
+.share-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.share-btn i {
+  font-size: 13px;
+}
+
+/* ---- Icon Button (3 dots) ---------------------------------- */
+.icon-btn {
+  height: 34px;
+  width: 34px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #ececec;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.18s ease;
+}
+
+.icon-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ---- User Avatar ------------------------------------------- */
+.userIconnDiv {
+  display: flex;
+  align-items: center;
+}
+
+.userIcon {
+  background: linear-gradient(135deg, #339cff 0%, #1d6fd1 100%);
+  height: 32px;
+  width: 32px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  font-size: 13px;
+  color: #fff;
+  transition: opacity 0.18s ease;
+}
+
+.userIcon:hover {
+  opacity: 0.85;
+}
+
+/* ================================================================
+   BOTTOM SECTION — INPUT + DISCLAIMER
+   WHY flex-shrink:0: this block anchors to the bottom of .chatWindow.
+   It must never be scrolled away or compressed.
+   We do NOT use position:fixed here — the flex column already keeps
+   it at the bottom. Using position:fixed would require a left offset
+   to account for sidebar width and breaks on mobile.
+================================================================ */
+.bottomSection {
+  flex-shrink: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 16px 14px;
+  background: linear-gradient(to bottom, transparent 0%, #212121 30%);
+  /* WHY z-index: sits above chat messages that scroll behind it */
+  position: relative;
+  z-index: 10;
+}
+
+/* ---- Chat Input Container ---------------------------------- */
+.chatInput {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* WHY max-width:768px: mirrors ChatGPT's centered content column.
+   The input doesn't stretch wall-to-wall on ultrawide screens. */
+.input-container {
+  width: 100%;
+  max-width: 768px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #2f2f2f;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.input-container:focus-within {
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
+}
+
+.input-container input {
+  flex: 1;
+  min-width: 0; /* WHY: prevents input from overflowing flex container */
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ececec;
+  font-size: 15px;
+  padding: 2px 4px;
+  font-family: inherit;
+  caret-color: #339cff;
+}
+
+.input-container input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* ---- Input Action Buttons ---------------------------------- */
+/* WHY scoped to .input-container button: prevents the old global
+   button rule from bleeding into these elements. Each button inside
+   the input bar gets consistent sizing with transparent background. */
+.input-container button {
+  height: 34px;
+  width: 34px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+  font-size: 14px;
+}
+
+.input-container button:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Add attachment button */
+.add-btn {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+
+/* Microphone button */
+.mic-btn {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+
+/* Send button — elevated background so it's clearly tappable */
+.send-btn {
+  background-color: #339cff !important;
+  color: #ffffff !important;
+  border-radius: 8px !important;
+}
+
+.send-btn:hover {
+  background-color: #1d88f0 !important;
+  color: #ffffff !important;
+}
+
+/* Stop button — red when loading */
+.stop-btn {
+  background-color: #ef4444 !important;
+  color: #ffffff !important;
+  border-radius: 8px !important;
+}
+
+.stop-btn:hover {
+  background-color: #dc2626 !important;
+  color: #ffffff !important;
+}
+
+/* ---- Disclaimer text --------------------------------------- */
+.info {
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.28);
+  text-align: center;
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+.info a {
+  color: rgba(255, 255, 255, 0.4);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.info a:hover {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ================================================================
+   RESPONSIVE BREAKPOINTS
+================================================================ */
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .input-container {
+    max-width: 680px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  /* Show hamburger on mobile */
+  .hamburger-btn {
+    display: flex;
+  }
+
+  .navbarr {
+    padding: 0 12px;
+    height: 52px;
+  }
+
+  /* Hide share button text on mobile, keep icon */
+  .share-btn span {
+    display: none;
+  }
+
+  .share-btn {
+    padding: 6px 10px;
+  }
+
+  .bottomSection {
+    padding: 6px 10px 12px;
+  }
+
+  .input-container {
+    border-radius: 14px;
+    padding: 8px 10px;
+  }
+
+  .input-container input {
+    font-size: 16px; /* WHY: 16px prevents iOS auto-zoom on focus */
+  }
+}
+
+/* Ultra-narrow phones */
+@media (max-width: 380px) {
+  .nav-right .share-btn {
+    display: none;
+  }
+}

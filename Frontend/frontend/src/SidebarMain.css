@@ -1,0 +1,309 @@
+/* ================================================================
+   SidebarMain.css
+   WHY: The #1 reported bug — bottom profile escaping the sidebar —
+   is caused by the old "justify-content:space-between + height:100%
+   on the thread list" pattern. When threads overflow, the list grows,
+   pushing the bottom section out of the viewport.
+
+   FIX: Three-zone flex column.
+     .sidebar-top     → flex-shrink:0   (never shrinks)
+     .sidebar-threads → flex:1, min-height:0, overflow-y:auto
+                         (min-height:0 is CRITICAL — without it a flex
+                          child refuses to shrink below its content,
+                          so the scroll never activates)
+     .sidebar-bottom  → flex-shrink:0   (always visible, never pushed)
+================================================================ */
+
+/* ---- Sidebar Shell ----------------------------------------- */
+.sidebar {
+  /* WHY width:260px + flex-shrink:0: sidebar must never flex-shrink
+     when the chat window grows. flex-none keeps it fixed. */
+  width: 260px;
+  flex-shrink: 0;
+  height: 100%; /* fills .app's locked 100vh */
+  background-color: #171717;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* guard: nothing bleeds out of the sidebar */
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 100;
+}
+
+/* ---- Top Section (Logo + New Chat) ------------------------- */
+/* WHY flex-shrink:0: this area must never be squished regardless
+   of how many threads exist below it. */
+.sidebar-top {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 12px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sidebar-logo-btn {
+  /* WHY: The old global `button` rule gave every button on the entire
+     page a white border and border-radius:14px — including send/stop/
+     share/icon buttons in ChatWindow. Scoping to .sidebar-logo-btn
+     isolates this style completely. */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.18s ease;
+  flex: 1;
+  min-width: 0; /* allow text to truncate */
+}
+
+.sidebar-logo-btn:hover {
+  background-color: rgba(255, 255, 255, 0.07);
+}
+
+.logo {
+  height: 26px;
+  width: 26px;
+  background-color: white;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.sidebar-logo-btn span {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ececec;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.new-chat-btn {
+  /* WHY: Separate element from the logo button so each has its own
+     hover target and doesn't inherit broken global button styles. */
+  background: transparent;
+  border: none;
+  color: #ececec;
+  cursor: pointer;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+  flex-shrink: 0;
+}
+
+.new-chat-btn:hover {
+  background-color: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+
+.new-chat-btn i {
+  font-size: 15px;
+}
+
+/* ---- Thread Section (THE SCROLLABLE ZONE) ----------------- */
+/* WHY flex:1 + min-height:0 + overflow-y:auto:
+   flex:1 makes it consume all remaining height between top and bottom.
+   min-height:0 overrides the browser default min-height:auto on flex
+   children, which would prevent this element from ever shrinking below
+   its content — meaning scroll would never activate.
+   overflow-y:auto adds the scrollbar only when needed. */
+.sidebar-threads {
+  flex: 1;
+  min-height: 0; /* ← THE CRITICAL FIX */
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 6px;
+}
+
+/* Custom scrollbar — professional, subtle */
+.sidebar-threads::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar-threads::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-threads::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+.sidebar-threads::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* Section label (e.g. "Today", "Yesterday") */
+.thread-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 10px 8px 4px;
+}
+
+/* Thread list */
+.history {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.history li {
+  cursor: pointer;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #b4b4b4;
+  line-height: 1.4;
+  /* WHY: text-overflow so long titles don't break the sidebar width */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+  position: relative;
+}
+
+.history li:hover {
+  background-color: rgba(255, 255, 255, 0.07);
+  color: #ececec;
+}
+
+.history li.active {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+/* ---- Bottom Section (User Profile) ------------------------ */
+/* WHY flex-shrink:0: this is the element that was escaping.
+   By making it flex-shrink:0 it can NEVER be compressed or
+   pushed out — it always occupies its natural height at the
+   bottom of the sidebar column. */
+.sidebar-bottom {
+  flex-shrink: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 10px 8px;
+}
+
+.sign {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.sign:hover {
+  background-color: rgba(255, 255, 255, 0.07);
+}
+
+.sign-avatar {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #339cff 0%, #1d6fd1 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 13px;
+  color: #fff;
+}
+
+.sign p {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #d4d4d4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ================================================================
+   MOBILE OVERLAY SIDEBAR
+   WHY: On mobile the sidebar slides in as an overlay rather than
+   pushing content. This avoids the "sidebar eats all the space"
+   problem on narrow screens. The .sidebar-overlay darkens the rest
+   of the app when the sidebar is open.
+================================================================ */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 99;
+  backdrop-filter: blur(1px);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+/* ================================================================
+   RESPONSIVE BREAKPOINTS
+================================================================ */
+
+/* Tablet: shrink sidebar slightly */
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 220px;
+  }
+}
+
+/* Mobile: sidebar becomes a slide-in drawer */
+@media (max-width: 768px) {
+  .sidebar {
+    /* WHY position:fixed + transform: the sidebar is removed from
+       normal flow so it doesn't affect the chat window width.
+       It slides in from the left on toggle. */
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 260px;
+    transform: translateX(-100%);
+    z-index: 200;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+  }
+
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay {
+    display: block;
+  }
+
+  .sidebar-overlay.overlay-visible {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .sidebar-overlay:not(.overlay-visible) {
+    pointer-events: none;
+  }
+}
+.fa-trash {
+  opacity: 0;
+  position: absolute;
+  right: 0;
+}
+.history li:hover .fa-trash {
+  opacity: 1;
+}
+.fa-trash:hover {
+  color: red;
+}
