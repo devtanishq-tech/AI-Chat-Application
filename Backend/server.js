@@ -26,7 +26,10 @@ const port = 8080 || process.env.port;
 app.use(express.json());
 app.use(
   cors({
-    origin: ["http://localhost:5173", "ai-chat-application-snowy.vercel.app"],
+    origin: [
+      "http://localhost:5173",
+      "https://ai-chat-application-snowy.vercel.app",
+    ],
     credentials: true,
   }),
 );
@@ -34,6 +37,7 @@ app.use(
 app.get("/", (req, res) => {
   res.send("Backend Running Successfully");
 });
+//======================MAIN ROUTES
 app.use("/chat", chat);
 app.post("/chat/ai", async (req, res) => {
   try {
