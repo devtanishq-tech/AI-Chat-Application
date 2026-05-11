@@ -3,6 +3,8 @@ import Chat from "./Chat";
 import axios from "axios";
 import { MyContext } from "./Mycontext";
 import { useContext, useRef } from "react";
+import { useState } from "react";
+import { Astroid, CircleUser, Settings, LifeBuoy, LogOut } from "lucide-react";
 
 export default function ChatWindow({ onOpenSidebar }) {
   const {
@@ -17,8 +19,14 @@ export default function ChatWindow({ onOpenSidebar }) {
     setnewChat,
     setstopGeneration,
   } = useContext(MyContext);
+  //=======================drop down state============================
+  const [dropdownisOpen, setdropdownisOpen] = useState(false);
+  //==================================================================
 
   const controllerRef = useRef(null);
+  const handleDropdown = async () => {
+    setdropdownisOpen((prev) => !prev);
+  };
 
   // ---- Input change ----------------------------------------
   const onchange = (e) => setprompt(e.target.value);
@@ -97,7 +105,33 @@ export default function ChatWindow({ onOpenSidebar }) {
             <i className="fa-solid fa-ellipsis" />
           </button>
 
-          <div className="userIconnDiv">
+          <div onClick={handleDropdown} className="userIconnDiv">
+            {dropdownisOpen && (
+              <div className="dropdownMenu">
+                <p className="username">USERNAME</p>
+                <p>
+                  <Astroid size={18} />
+                  Upgraded Plan
+                </p>
+                <p>
+                  <CircleUser size={18} />
+                  Personalization
+                </p>
+                <p>Profile</p>
+                <p>
+                  <Settings size={18} />
+                  Settings
+                </p>
+                <p>
+                  <LifeBuoy size={18} />
+                  Help
+                </p>
+                <p>
+                  <LogOut size={18} />
+                  Logout
+                </p>
+              </div>
+            )}
             <span className="userIcon" role="img" aria-label="User avatar">
               <i className="fa-solid fa-user" />
             </span>

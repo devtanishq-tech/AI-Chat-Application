@@ -11,6 +11,7 @@ import remarkGfm from "remark-gfm";
 // ---- Syntax highlighting
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+// import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 // ===================== CodeBlock Component =====================
 // WHY: Extracted as its own component so it can manage its own
