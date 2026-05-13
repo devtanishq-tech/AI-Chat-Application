@@ -1,9 +1,11 @@
 import { MyContext } from "./Mycontext";
 import ChatWindow from "./ChatWindow";
 import SidebarMain from "./SidebarMain";
+import AuthModal from "./AuthModal";
 import "./App.css";
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+import axios from "axios";
 
 function App() {
   // ---- Chat state ----------------------------------------
@@ -16,16 +18,52 @@ function App() {
   const [stopGeneration, setstopGeneration] = useState(false);
   const [allthread, setallthread] = useState([]);
 
+  // ---- Auth state ----------------------------------------
+  // WHY: isAuthenticated + user live in App (the root) so both
+  // ChatWindow (which renders the navbar) and any future protected
+  // routes can consume them without prop-drilling through context.
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
+
+  // authModal: null | "login" | "signup"
+  // WHY null = closed, string = which form to show.
+  // A single state value avoids the footgun of two separate
+  // isLoginOpen + isSignupOpen booleans getting out of sync.
+  const [authModal, setAuthModal] = useState(null);
+
   // ---- Mobile sidebar toggle state -----------------------
   // WHY: sidebar open/close lives in App so both SidebarMain
   // (which needs to know if it's open) and ChatWindow (which
-  // has the hamburger button to open it) can share this state
-  // without a third-party state manager.
+  // has the hamburger button to open it) can share this state.
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
   const openSidebar = () => setSidebarOpen(true);
   const closeSidebar = () => setSidebarOpen(false);
 
+  // ---- Auth handlers -------------------------------------
+  const handleAuthSuccess = (userData) => {
+    setIsAuthenticated(true);
+    setUser(userData);
+    setAuthModal(null);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/logout`,
+        {},
+        { withCredentials: true },
+      );
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      // WHY: always clear local state even if the network request fails,
+      // so the user is never stuck in a broken "logged in" UI state.
+      setIsAuthenticated(false);
+      setUser(null);
+    }
+  };
+
+  // ---- Context value -------------------------------------
   const valuePassed = {
     prompt,
     setprompt,
@@ -48,10 +86,31 @@ function App() {
   return (
     <div className="app">
       <MyContext.Provider value={valuePassed}>
-        {/* isOpen + onClose power the mobile slide-in drawer */}
-        <SidebarMain isOpen={sidebarOpen} onClose={closeSidebar} />
-        {/* onOpenSidebar wires the hamburger button in the navbar */}
-        <ChatWindow onOpenSidebar={openSidebar} />
+        <SidebarMain
+          isOpen={sidebarOpen}
+          onClose={closeSidebar}
+          isAuthenticated={isAuthenticated}
+        />
+
+        <ChatWindow
+          onOpenSidebar={openSidebar}
+          isAuthenticated={isAuthenticated}
+          user={user}
+          onLogout={handleLogout}
+          onOpenLogin={() => setAuthModal("login")}
+          onOpenSignup={() => setAuthModal("signup")}
+        />
+
+        {/* Auth Modal — rendered at root level so it overlays everything.
+            Conditionally mounted: unmounts on close to reset all form state. */}
+        {authModal && (
+          <AuthModal
+            mode={authModal}
+            onClose={() => setAuthModal(null)}
+            onSuccess={handleAuthSuccess}
+            onSwitchMode={(mode) => setAuthModal(mode)}
+          />
+        )}
       </MyContext.Provider>
     </div>
   );

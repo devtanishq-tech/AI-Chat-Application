@@ -4,7 +4,7 @@ import axios from "axios";
 import { MyContext } from "./Mycontext";
 import { v4 as uuidv4 } from "uuid";
 
-export default function SidebarMain({ isOpen, onClose }) {
+export default function SidebarMain({ isOpen, onClose, isAuthenticated }) {
   const {
     allthread,
     setallthread,
@@ -20,7 +20,8 @@ export default function SidebarMain({ isOpen, onClose }) {
   const openSpecificData = async (threadID) => {
     try {
       const res = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/chat/thread/${threadID}`,
+        `${import.meta.env.VITE_BACKEND_URL}/chat/thread/${threadID},`,
+        { withCredentials: true },
       );
       const specificChat = res.data.messages;
       setreply(null);
@@ -49,6 +50,7 @@ export default function SidebarMain({ isOpen, onClose }) {
     try {
       const response = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/chat/thread`,
+        { withCredentials: true },
       );
       const dataneeded = response.data.map((t) => ({
         threadId: t.threadId,
@@ -63,6 +65,7 @@ export default function SidebarMain({ isOpen, onClose }) {
   const handleDelete = async (threadId) => {
     let dThread = await axios.delete(
       `${import.meta.env.VITE_BACKEND_URL}/chat/thread/${threadId}`,
+      { withCredentials: true },
     );
     setallthread((prev) =>
       prev.filter((thread) => thread.threadId !== threadId),
@@ -74,9 +77,17 @@ export default function SidebarMain({ isOpen, onClose }) {
     console.log(dThread);
   };
   //=========================================================================
-  useEffect(() => {
-    getAllthread();
-  }, [currentID]);
+  useEffect(
+    () => {
+      if (isAuthenticated) {
+        getAllthread();
+      } else {
+        setallthread([]);
+      }
+    },
+    [currentID],
+    isAuthenticated,
+  );
   //=============================================================================
   return (
     <>

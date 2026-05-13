@@ -11,9 +11,8 @@
 /* ---- Chat Window Shell ------------------------------------- */
 .chatWindow {
   flex: 1;
-  min-width: 0; /* WHY: without this, flex children refuse to
-                             shrink below their content width, causing
-                             horizontal overflow */
+  min-width: 0; /* WHY: without this, flex children refuse to shrink
+                   below their content width → horizontal overflow */
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -37,9 +36,37 @@
   padding: 0 16px;
   background-color: #212121;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  /* WHY z-index: sits above chat messages when they scroll under it */
+  /* WHY z-index:10: sits above chat messages when they scroll under it */
   z-index: 10;
   position: relative;
+}
+
+/* ---- Nav Left -------------------------------------------- */
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-brand {
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  color: #ececec;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s ease;
+  user-select: none;
+}
+
+.nav-brand:hover {
+  color: #ffffff;
+}
+
+.nav-brand i {
+  font-size: 12px;
+  color: #888;
 }
 
 /* Mobile hamburger — hidden on desktop */
@@ -66,37 +93,79 @@
   font-size: 16px;
 }
 
-.nav-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.nav-left span {
-  font-weight: 600;
-  font-size: 15px;
-  cursor: pointer;
-  color: #ececec;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: color 0.15s ease;
-}
-
-.nav-left span:hover {
-  color: #ffffff;
-}
-
-.nav-left span i {
-  font-size: 12px;
-  color: #888;
-}
-
+/* ---- Nav Right ------------------------------------------- */
 .nav-right {
   display: flex;
   align-items: center;
   gap: 8px;
 }
+
+/* ================================================================
+   AUTH NAV BUTTONS (unauthenticated state)
+   WHY: These replace share/icon-btn/avatar when user is logged out.
+   Matches the reference Image 3: "Log in" outline + "Sign up for free" filled.
+================================================================ */
+.auth-nav-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* "Log in" — subtle outline style */
+.nav-login-btn {
+  padding: 7px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: #ececec;
+  font-size: 13.5px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+  white-space: nowrap;
+}
+
+.nav-login-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+}
+
+/* "Sign up for free" — solid white, dark text (premium CTA) */
+.nav-signup-btn {
+  padding: 7px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.9);
+  color: #111111;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
+  white-space: nowrap;
+}
+
+.nav-signup-btn:hover {
+  background: #ffffff;
+  border-color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.nav-signup-btn:active {
+  transform: translateY(0);
+}
+
+/* ================================================================
+   AUTHENTICATED NAV ELEMENTS
+================================================================ */
 
 /* ---- Share Button ------------------------------------------ */
 .share-btn {
@@ -149,80 +218,8 @@
 .userIconnDiv {
   display: flex;
   align-items: center;
+  position: relative;
 }
-/* ==================================DROPDOWN css Styling Section ===================
-*/
-/* ================= DROPDOWN ================= */
-
-.username {
-  font-size: 13px;
-  font-weight: 600;
-
-  color: #9f9f9f;
-
-  padding-bottom: 10px;
-
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-
-  margin-bottom: 8px !important;
-}
-
-.dropdownMenu {
-  position: absolute;
-  top: 52px;
-  right: 0;
-
-  width: 260px;
-  background: #2f2f2f;
-
-  border-radius: 18px;
-  padding: 10px 0;
-
-  border: 1px solid rgba(255, 255, 255, 0.08);
-
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-
-  display: flex;
-  flex-direction: column;
-
-  z-index: 999;
-}
-
-/* EACH MENU ITEM */
-.dropdownMenu p {
-  display: flex;
-  align-items: center;
-
-  gap: 14px;
-
-  padding: 13px 18px;
-  margin: 0;
-
-  color: #ececec;
-  font-size: 15px;
-  font-weight: 400;
-
-  cursor: pointer;
-
-  transition: background 0.15s ease;
-}
-
-/* HOVER */
-.dropdownMenu p:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-/* ICON STYLING */
-.dropdownMenu svg {
-  width: 18px;
-  height: 18px;
-
-  color: #e5e5e5;
-
-  flex-shrink: 0;
-}
-
-/*===============================================================================*/
 
 .userIcon {
   background: linear-gradient(135deg, #339cff 0%, #1d6fd1 100%);
@@ -236,6 +233,7 @@
   font-size: 13px;
   color: #fff;
   transition: opacity 0.18s ease;
+  flex-shrink: 0;
 }
 
 .userIcon:hover {
@@ -243,12 +241,82 @@
 }
 
 /* ================================================================
+   DROPDOWN MENU
+================================================================ */
+.dropdownMenu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 260px;
+  background: #2f2f2f;
+  border-radius: 18px;
+  padding: 10px 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  z-index: 999;
+  animation: dropdownIn 0.18s ease both;
+}
+
+@keyframes dropdownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.username {
+  font-size: 13px;
+  font-weight: 600;
+  color: #9f9f9f;
+  padding: 4px 18px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 6px !important;
+}
+
+.dropdownMenu p {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px;
+  margin: 0;
+  color: #ececec;
+  font-size: 14.5px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.dropdownMenu p:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.dropdownMenu svg {
+  width: 18px;
+  height: 18px;
+  color: #e5e5e5;
+  flex-shrink: 0;
+}
+
+/* Logout item — slightly red on hover for clarity */
+.logout-item:hover {
+  background: rgba(239, 68, 68, 0.08) !important;
+  color: #fca5a5 !important;
+}
+
+.logout-item:hover svg {
+  color: #fca5a5 !important;
+}
+
+/* ================================================================
    BOTTOM SECTION — INPUT + DISCLAIMER
-   WHY flex-shrink:0: this block anchors to the bottom of .chatWindow.
-   It must never be scrolled away or compressed.
-   We do NOT use position:fixed here — the flex column already keeps
-   it at the bottom. Using position:fixed would require a left offset
-   to account for sidebar width and breaks on mobile.
+   WHY flex-shrink:0: anchors to bottom of .chatWindow.
+   No position:fixed needed — the flex column keeps it there.
 ================================================================ */
 .bottomSection {
   flex-shrink: 0;
@@ -258,7 +326,6 @@
   align-items: center;
   padding: 8px 16px 14px;
   background: linear-gradient(to bottom, transparent 0%, #212121 30%);
-  /* WHY z-index: sits above chat messages that scroll behind it */
   position: relative;
   z-index: 10;
 }
@@ -270,8 +337,7 @@
   justify-content: center;
 }
 
-/* WHY max-width:768px: mirrors ChatGPT's centered content column.
-   The input doesn't stretch wall-to-wall on ultrawide screens. */
+/* WHY max-width:768px: mirrors ChatGPT's centered content column */
 .input-container {
   width: 100%;
   max-width: 768px;
@@ -295,7 +361,7 @@
 
 .input-container input {
   flex: 1;
-  min-width: 0; /* WHY: prevents input from overflowing flex container */
+  min-width: 0;
   background: transparent;
   border: none;
   outline: none;
@@ -311,9 +377,6 @@
 }
 
 /* ---- Input Action Buttons ---------------------------------- */
-/* WHY scoped to .input-container button: prevents the old global
-   button rule from bleeding into these elements. Each button inside
-   the input bar gets consistent sizing with transparent background. */
 .input-container button {
   height: 34px;
   width: 34px;
@@ -337,17 +400,13 @@
   color: rgba(255, 255, 255, 0.85);
 }
 
-/* Add attachment button */
 .add-btn {
   color: rgba(255, 255, 255, 0.45) !important;
 }
-
-/* Microphone button */
 .mic-btn {
   color: rgba(255, 255, 255, 0.45) !important;
 }
 
-/* Send button — elevated background so it's clearly tappable */
 .send-btn {
   background-color: #339cff !important;
   color: #ffffff !important;
@@ -359,7 +418,6 @@
   color: #ffffff !important;
 }
 
-/* Stop button — red when loading */
 .stop-btn {
   background-color: #ef4444 !important;
   color: #ffffff !important;
@@ -395,15 +453,12 @@
 /* ================================================================
    RESPONSIVE BREAKPOINTS
 ================================================================ */
-
-/* Tablet */
 @media (max-width: 1024px) {
   .input-container {
     max-width: 680px;
   }
 }
 
-/* Mobile */
 @media (max-width: 768px) {
   /* Show hamburger on mobile */
   .hamburger-btn {
@@ -419,9 +474,18 @@
   .share-btn span {
     display: none;
   }
-
   .share-btn {
     padding: 6px 10px;
+  }
+
+  /* Compact auth buttons on mobile */
+  .nav-signup-btn {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+  .nav-login-btn {
+    padding: 6px 12px;
+    font-size: 13px;
   }
 
   .bottomSection {
@@ -434,13 +498,36 @@
   }
 
   .input-container input {
-    font-size: 16px; /* WHY: 16px prevents iOS auto-zoom on focus */
+    font-size: 16px; /* WHY: prevents iOS auto-zoom on focus */
   }
 }
 
-/* Ultra-narrow phones */
+@media (max-width: 480px) {
+  /* On very small screens, show only the icon for login */
+  .nav-login-btn {
+    padding: 6px 10px;
+  }
+
+  /* Hide "Sign up for free" text partially on tiny screens */
+  .nav-signup-btn {
+    padding: 6px 10px;
+    font-size: 12.5px;
+  }
+}
+
 @media (max-width: 380px) {
+  /* On ultra-narrow: hide share btn entirely */
   .nav-right .share-btn {
     display: none;
+  }
+
+  /* Stack auth buttons or make them smaller */
+  .auth-nav-buttons {
+    gap: 5px;
+  }
+  .nav-login-btn,
+  .nav-signup-btn {
+    padding: 5px 9px;
+    font-size: 12px;
   }
 }

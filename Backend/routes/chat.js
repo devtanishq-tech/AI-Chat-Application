@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import express from "express";
 import { message, threads } from "../models/OverAllScheam.js";
+import authMiddleware from "../middleware/Authmiddleware.js";
 const router = express.Router();
 //=========================add thread =====================================
 router.post("/add", async (req, res) => {
@@ -17,11 +18,11 @@ router.post("/add", async (req, res) => {
   res.status(200).json({ message: "Message has been successfully created" });
 });
 //=======================Specific id //============================================================
-router.get("/thread/:threadId", async (req, res) => {
+router.get("/thread/:threadId", authMiddleware, async (req, res) => {
   try {
     const { threadId } = req.params;
     console.log(threadId);
-    const data = await threads.findOne({ threadId });
+    const data = await threads.findOne({ threadId, user: req.user.id });
     if (!data) {
       res.status(401).json({ message: "thread does not exist " });
     }
@@ -32,16 +33,17 @@ router.get("/thread/:threadId", async (req, res) => {
   }
 });
 //==========================================Get all Threads //=====================================
-router.get("/thread", async (req, res) => {
-  let find = await threads.find().sort({ updatedAt: -1 });
+router.get("/thread", authMiddleware, async (req, res) => {
+  let find = await threads.find({ user: req.user.id }).sort({ updatedAt: -1 });
   res.send(find);
 });
 //==============================Delete thread Route =====================================
-router.delete("/thread/:threadId", async (req, res) => {
+router.delete("/thread/:threadId", authMiddleware, async (req, res) => {
   try {
     const { threadId } = req.params;
     let deletee = await threads.deleteOne({
       threadId,
+      user: req.user.id,
     });
     if (!deletee) {
       return res.status(401).json({ message: "data not found " });

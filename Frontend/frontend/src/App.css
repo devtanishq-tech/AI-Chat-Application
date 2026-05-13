@@ -5,11 +5,7 @@
    height:100% has nothing to anchor to and the body scrolls.
 ================================================================ */
 
-/* --- Reset & Viewport Jail ---
-   We zero out all default margins/paddings with box-sizing globally,
-   then lock html + body + #root to exactly the viewport height.
-   overflow:hidden on html prevents the rubber-band / body-scroll
-   that plagued the original layout. */
+/* --- Reset & Viewport Jail ---------------------------------- */
 *,
 *::before,
 *::after {
@@ -27,7 +23,6 @@ body {
   height: 100%;
   overflow: hidden;
   background-color: #212121;
-  /* DM Sans: clean, modern, not generic – distinct from Inter/Roboto */
   font-family: "DM Sans", "Segoe UI", system-ui, sans-serif;
   color: #ececec;
   -webkit-font-smoothing: antialiased;
@@ -40,10 +35,9 @@ body {
   overflow: hidden;
 }
 
-/* --- App Shell ---
+/* --- App Shell ----------------------------------------------
    The outermost flex row: sidebar | chat-window.
-   height:100% inherits from #root which is locked to 100vh.
-   overflow:hidden is the second guard against any accidental bleed. */
+   height:100% inherits from #root which is locked to 100vh. */
 .app {
   display: flex;
   flex-direction: row;

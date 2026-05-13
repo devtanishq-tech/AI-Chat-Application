@@ -1,0 +1,354 @@
+/* ================================================================
+   AuthModal.css
+   WHY: All modal styles are isolated here so they never bleed into
+   the app shell. The overlay is position:fixed so it sits above
+   everything (z-index:1000). Backdrop blur creates the premium
+   effect from the reference image.
+================================================================ */
+
+/* ---- Backdrop Overlay -------------------------------------- */
+/* WHY: position:fixed + inset:0 covers the ENTIRE viewport including
+   scrolled content. backdrop-filter blurs whatever is behind it.
+   The semi-transparent background darkens the UI underneath. */
+.auth-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  animation: overlayFadeIn 0.22s ease both;
+}
+
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---- Modal Card ------------------------------------------- */
+/* WHY cubic-bezier(0.34,1.56,...): this "springy" easing gives the
+   modal that satisfying slight overshoot on open that premium apps use.
+   The scale goes from 0.9 → 1 with a tiny bounce at the end. */
+.auth-modal {
+  position: relative;
+  width: 100%;
+  max-width: 432px;
+  background: #1c1c1c;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 24px;
+  padding: 42px 38px 34px;
+  box-shadow:
+    0 32px 80px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  animation: modalPopIn 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes modalPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ---- Close Button ----------------------------------------- */
+.auth-close-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.auth-close-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* ---- Header ----------------------------------------------- */
+.auth-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.auth-header h2 {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.025em;
+  margin-bottom: 7px;
+  line-height: 1.2;
+}
+
+.auth-header p {
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.42);
+  line-height: 1.5;
+}
+
+/* ---- Form ------------------------------------------------- */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ---- Field ------------------------------------------------ */
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: fieldSlideIn 0.2s ease both;
+}
+
+/* WHY stagger: each field fades in slightly after the previous,
+   creating a subtle cascade effect without being distracting. */
+.auth-field:nth-child(1) {
+  animation-delay: 0.05s;
+}
+.auth-field:nth-child(2) {
+  animation-delay: 0.08s;
+}
+.auth-field:nth-child(3) {
+  animation-delay: 0.11s;
+}
+.auth-field:nth-child(4) {
+  animation-delay: 0.14s;
+}
+
+@keyframes fieldSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.auth-field label {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.015em;
+  text-transform: uppercase;
+}
+
+.auth-field input {
+  width: 100%;
+  background: #252525;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 13px 16px;
+  font-size: 15px;
+  color: #ececec;
+  font-family: inherit;
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+  caret-color: #339cff;
+}
+
+.auth-field input::placeholder {
+  color: rgba(255, 255, 255, 0.22);
+}
+
+/* WHY: focus ring uses brand blue to match the send button and
+   create visual consistency across interactive elements. */
+.auth-field input:focus {
+  border-color: rgba(51, 156, 255, 0.5);
+  box-shadow: 0 0 0 3.5px rgba(51, 156, 255, 0.1);
+  background: #2a2a2a;
+}
+
+/* ---- Error Message --------------------------------------- */
+.auth-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #fca5a5;
+  line-height: 1.4;
+  animation: errorShake 0.3s ease both;
+}
+
+.auth-error i {
+  font-size: 13px;
+  flex-shrink: 0;
+  color: #f87171;
+}
+
+@keyframes errorShake {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  20% {
+    transform: translateX(-4px);
+    opacity: 1;
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+/* ---- Submit Button --------------------------------------- */
+/* WHY white bg + dark text: matches the ChatGPT reference modal
+   exactly. The solid white CTA pops against the dark card. */
+.auth-submit-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: #ffffff;
+  color: #111111;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: -0.01em;
+  transition:
+    background 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.auth-submit-btn:hover:not(:disabled) {
+  background: #ebebeb;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.auth-submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.auth-submit-btn.loading {
+  opacity: 0.65;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ---- Loading Spinner ------------------------------------- */
+.auth-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(0, 0, 0, 0.18);
+  border-top-color: #111111;
+  border-radius: 50%;
+  animation: spinnerRotate 0.65s linear infinite;
+}
+
+@keyframes spinnerRotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---- Divider --------------------------------------------- */
+.auth-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.07);
+  margin: 22px 0 18px;
+}
+
+/* ---- Mode Switch ----------------------------------------- */
+.auth-switch {
+  text-align: center;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.38);
+  line-height: 1.5;
+}
+
+.auth-switch button {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13.5px;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s ease;
+  padding: 0;
+}
+
+.auth-switch button:hover {
+  color: #ffffff;
+}
+
+/* ================================================================
+   RESPONSIVE
+================================================================ */
+@media (max-width: 520px) {
+  .auth-modal {
+    padding: 34px 24px 28px;
+    border-radius: 20px;
+    max-width: 100%;
+  }
+
+  .auth-header h2 {
+    font-size: 1.45rem;
+  }
+
+  .auth-header p {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 380px) {
+  .auth-modal {
+    padding: 28px 18px 24px;
+  }
+
+  .auth-field input {
+    font-size: 16px; /* WHY: prevents iOS auto-zoom on input focus */
+    padding: 12px 14px;
+  }
+}
