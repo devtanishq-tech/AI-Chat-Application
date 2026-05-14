@@ -30,7 +30,7 @@ const createConnection = async () => {
 
 // const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const app = express();
-const port = 8080 || process.env.port;
+const port = process.env.port || 8080;
 app.use(express.json()); // acting as a body parser
 app.use(cookieParser());
 app.use(
@@ -111,8 +111,8 @@ app.post("/signup", async (req, res) => {
     const token = Tokengeneration(newUser._id);
     res.cookie("token", token, {
       httpOnly: true,
-      sameSite: "lax",
-      secure: false,
+      sameSite: none,
+      secure: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     res.status(200).json({ message: "User Data has been added" });
@@ -142,8 +142,8 @@ app.post("/login", async (req, res) => {
     const token = Tokengeneration(user._id);
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: true,
+      sameSite: none,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     res.status(200).json({ message: "Logged in Successfully" });

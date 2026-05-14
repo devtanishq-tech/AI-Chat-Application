@@ -35,6 +35,7 @@ export default function ChatWindow({
   //===========================Auth Error========================
   const [authError, setauthError] = useState(false);
   //=============================================================
+  //==========Window Speech Recoginition Feature //====================
 
   useEffect(() => {
     const spechreco =

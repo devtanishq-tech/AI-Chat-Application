@@ -17,14 +17,8 @@ function App() {
   const [newChat, setnewChat] = useState(true);
   const [stopGeneration, setstopGeneration] = useState(false);
   const [allthread, setallthread] = useState([]);
-
-  // ---- Auth state ----------------------------------------
-  // WHY: isAuthenticated + user live in App (the root) so both
-  // ChatWindow (which renders the navbar) and any future protected
-  // routes can consume them without prop-drilling through context.
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
-  // user will keep track of email userName
   const [authModal, setAuthModal] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const openSidebar = () => setSidebarOpen(true);
