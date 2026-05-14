@@ -20,7 +20,7 @@ export default function SidebarMain({ isOpen, onClose, isAuthenticated }) {
   const openSpecificData = async (threadID) => {
     try {
       const res = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/chat/thread/${threadID},`,
+        `${import.meta.env.VITE_BACKEND_URL}/chat/thread/${threadID}`,
         { withCredentials: true },
       );
       const specificChat = res.data.messages;
@@ -77,17 +77,13 @@ export default function SidebarMain({ isOpen, onClose, isAuthenticated }) {
     console.log(dThread);
   };
   //=========================================================================
-  useEffect(
-    () => {
-      if (isAuthenticated) {
-        getAllthread();
-      } else {
-        setallthread([]);
-      }
-    },
-    [currentID],
-    isAuthenticated,
-  );
+  useEffect(() => {
+    if (isAuthenticated) {
+      getAllthread();
+    } else {
+      setallthread([]);
+    }
+  }, [currentID, isAuthenticated]);
   //=============================================================================
   return (
     <>

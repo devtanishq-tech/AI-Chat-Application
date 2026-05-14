@@ -79,9 +79,13 @@ export default function Chat() {
   useEffect(() => {
     if (!reply) return;
     if (!prevChats?.length) return;
+    clearInterval(intervalRef.current);
+    setlastReply("");
 
     let idx = 0;
     const content = reply.split(" ");
+
+    setstopGeneration(true);
 
     intervalRef.current = setInterval(() => {
       setlastReply(content.slice(0, idx + 1).join(" "));
@@ -99,6 +103,10 @@ export default function Chat() {
   // ---- Clear animation when switching threads --------------
   useEffect(() => {
     setlastReply("");
+
+    clearInterval(intervalRef.current);
+
+    setstopGeneration(false);
   }, [currentID]);
 
   // ---- Auto-scroll to bottom as reply streams --------------
@@ -108,7 +116,7 @@ export default function Chat() {
 
   // ---- Stop generation on demand --------------------------
   useEffect(() => {
-    if (stopGeneration) {
+    if (!stopGeneration) {
       clearInterval(intervalRef.current);
     }
   }, [stopGeneration]);
@@ -120,7 +128,9 @@ export default function Chat() {
     <div className="chat-wrapper">
       <div className="chat-container">
         {/* Empty state */}
-        {newChat && <h1 className="chat-title">What can I help with?</h1>}
+        <div className={`chat-title-wrapper ${newChat ? "show" : ""}`}>
+          {newChat && <h1 className="chat-title">What can I help with?</h1>}
+        </div>
 
         {/* ---- Message list (independently scrollable) ---- */}
         <div className="chat-messages">

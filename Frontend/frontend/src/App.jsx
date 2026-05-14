@@ -24,17 +24,8 @@ function App() {
   // routes can consume them without prop-drilling through context.
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
-
-  // authModal: null | "login" | "signup"
-  // WHY null = closed, string = which form to show.
-  // A single state value avoids the footgun of two separate
-  // isLoginOpen + isSignupOpen booleans getting out of sync.
+  // user will keep track of email userName
   const [authModal, setAuthModal] = useState(null);
-
-  // ---- Mobile sidebar toggle state -----------------------
-  // WHY: sidebar open/close lives in App so both SidebarMain
-  // (which needs to know if it's open) and ChatWindow (which
-  // has the hamburger button to open it) can share this state.
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const openSidebar = () => setSidebarOpen(true);
   const closeSidebar = () => setSidebarOpen(false);
@@ -101,7 +92,7 @@ function App() {
           onOpenSignup={() => setAuthModal("signup")}
         />
 
-        {/* Auth Modal — rendered at root level so it overlays everything.
+        {/* Auth Modal — rendered at root level so it overl ays everything.
             Conditionally mounted: unmounts on close to reset all form state. */}
         {authModal && (
           <AuthModal
