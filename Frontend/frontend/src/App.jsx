@@ -6,6 +6,7 @@ import "./App.css";
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
+import { useEffect } from "react";
 
 function App() {
   // ---- Chat state ----------------------------------------
@@ -21,16 +22,36 @@ function App() {
   const [user, setUser] = useState(null);
   const [authModal, setAuthModal] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  useEffect(() => {
+    const authrequest = async () => {
+      try {
+        const res = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/auth/me`,
+          {
+            withCredentials: true,
+          },
+        );
+        setIsAuthenticated(true);
+        setUser(res.data.user);
+      } catch (err) {
+        setIsAuthenticated(false);
+        setUser(null);
+        console.log("Not Authenticated", err);
+      }
+    };
+    authrequest();
+  }, []);
   const openSidebar = () => setSidebarOpen(true);
   const closeSidebar = () => setSidebarOpen(false);
-
   // ---- Auth handlers -------------------------------------
   const handleAuthSuccess = (userData) => {
     setIsAuthenticated(true);
     setUser(userData);
     setAuthModal(null);
   };
+  //=========================================
 
+  //==========================================
   const handleLogout = async () => {
     try {
       await axios.post(

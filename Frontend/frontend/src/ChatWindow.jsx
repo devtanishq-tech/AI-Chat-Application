@@ -3,7 +3,14 @@ import Chat from "./Chat";
 import axios from "axios";
 import { MyContext } from "./Mycontext";
 import { useContext, useRef, useState, useEffect } from "react";
-import { Astroid, CircleUser, Settings, LifeBuoy, LogOut } from "lucide-react";
+import {
+  Astroid,
+  CircleUser,
+  Settings,
+  LifeBuoy,
+  LogOut,
+  AudioLines,
+} from "lucide-react";
 
 export default function ChatWindow({
   onOpenSidebar,
@@ -30,21 +37,126 @@ export default function ChatWindow({
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   // ===================== Mic / Voice =====================
+
   const recognitionRef = useRef(null);
   const [isListining, setisListining] = useState(false);
-  //===========================Auth Error========================
+
+  // voiceMode STATE drives the UI (button label, overlay, etc.)
+  const [voiceMode, setVoiceMode] = useState(false);
+  // voiceModeRef is read inside callbacks/closures so they never go stale
+  const voiceModeRef = useRef(false);
+
+  const isAISpeakingRef = useRef(false);
+  const transcriptRef = useRef("");
+
+  // ===========================Auth Error========================
   const [authError, setauthError] = useState(false);
-  //=============================================================
-  //==========Window Speech Recoginition Feature //====================
+
+  // ========================================================
+  // ================ Speech Synthesis ======================
+
+  const voicesRef = useRef([]);
 
   useEffect(() => {
-    const spechreco =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!spechreco) {
-      console.log("Speech does not Supported");
-      return;
+    const loadVoices = () => {
+      voicesRef.current = window.speechSynthesis.getVoices();
+    };
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+    return () => {
+      window.speechSynthesis.onvoiceschanged = null;
+    };
+  }, []);
+
+  // speak() only fires in Voice AI mode — checked via ref so it's never stale
+  const speak = (text) => {
+    if (!voiceModeRef.current) return; // ← restrict to Voice AI mode only
+    if (!window.speechSynthesis || !text) return;
+
+    window.speechSynthesis.cancel();
+
+    const cleanText = text
+      .replace(/[*#`]/g, "")
+      .replace(/\[(.*?)\]/g, "$1")
+      .replace(/\(.*?\)/g, "");
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = "en-US";
+    utterance.rate = 0.92;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+
+    const voices = voicesRef.current;
+    const preferredVoice =
+      voices.find((v) => v.name.includes("Google US English")) ||
+      voices.find((v) => v.name.includes("Microsoft Aria")) ||
+      voices.find((v) => v.name.includes("Microsoft Jenny")) ||
+      voices.find((v) => v.name.includes("Samantha")) ||
+      voices.find((v) => v.lang === "en-US");
+
+    if (preferredVoice) utterance.voice = preferredVoice;
+    utterance.onstart = () => {
+      // here isAispeakingRef is useREF Variable where we used  this to assing is Ai speaking or not
+      //Acting as YES OR NO
+      isAISpeakingRef.current = true;
+    };
+    utterance.onend = () => {
+      isAISpeakingRef.current = false;
+      // After AI finishes speaking, restart listening — use ref, never stale
+      if (voiceModeRef.current && recognitionRef.current) {
+        setTimeout(() => {
+          recognitionRef.current.start();
+        }, 600);
+      }
+    };
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // ========================================================
+  // ========== send Voice Message Function =================
+
+  const sendVoiceMessage = async (message) => {
+    if (!message.trim()) return;
+
+    setprompt("");
+
+    setprevChats((prev) => [...prev, { content: message, role: "user" }]);
+
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/chat/ai`,
+        { threadID: currentID, message },
+        { withCredentials: true },
+      );
+
+      const aiReply = res.data.reply;
+
+      setprevChats((prev) => [
+        ...prev,
+        { content: aiReply, role: "assistant" },
+      ]);
+
+      setreply(aiReply);
+      speak(aiReply); // only fires if voiceModeRef.current === true
+    } catch (err) {
+      console.log(err);
     }
-    recognitionRef.current = new spechreco();
+  };
+
+  // ========================================================
+  // ========== Speech Recognition — set up ONCE ============
+  //
+  // We no longer depend on [voiceMode] so the effect never
+  // re-runs and the recognition instance is never recreated.
+  // All branching logic reads from voiceModeRef (always fresh).
+
+  useEffect(() => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    recognitionRef.current = new SpeechRecognition();
     recognitionRef.current.continuous = false;
     recognitionRef.current.interimResults = true;
     recognitionRef.current.lang = "en-US";
@@ -57,21 +169,56 @@ export default function ChatWindow({
       for (let i = event.resultIndex; i < event.results.length; i++) {
         transcript += event.results[i][0].transcript;
       }
-      setprompt(transcript);
+      transcriptRef.current = transcript;
+
+      // Read from REF — never a stale closure value
+      if (!voiceModeRef.current) {
+        // AI Dictation / plain mic: just fill the input
+        setprompt(transcript);
+        return;
+      }
+
+      // Voice AI mode: auto-send when the utterance is final
+      if (event.results[event.results.length - 1].isFinal) {
+        sendVoiceMessage(transcript);
+      }
     };
-  }, []);
+
+    // Cleanup on unmount
+    return () => {
+      recognitionRef.current?.stop();
+    };
+  }, []); // ← empty deps: set up once, refs handle the rest
+
+  // ========================================================
+  // ======= Mic / Voice mode controls ======================
 
   const handleMic = () => {
-    if (!recognitionRef.current) return;
-    recognitionRef.current.start();
+    if (voiceModeRef.current) return; // don't interfere with Voice AI mode
+    setprompt("");
+    recognitionRef.current?.start();
   };
 
-  // ---- Stop listening from the overlay ------------------
+  const startVoiceMode = () => {
+    voiceModeRef.current = true; // update ref FIRST so onresult sees it immediately
+    setVoiceMode(true); // then update state for UI re-render
+    setprompt("");
+    recognitionRef.current?.start();
+  };
+
+  const stopVoiceMode = () => {
+    voiceModeRef.current = false; // update ref FIRST
+    setVoiceMode(false);
+    recognitionRef.current?.stop();
+    window.speechSynthesis.cancel();
+  };
+
   const handleStopListening = () => {
-    if (recognitionRef.current) recognitionRef.current.stop();
+    recognitionRef.current?.stop();
     setisListining(false);
   };
-  // =======================================================
+
+  // ========================================================
 
   const toggleDropdown = () => setDropdownOpen((prev) => !prev);
   const onchange = (e) => setprompt(e.target.value);
@@ -79,18 +226,16 @@ export default function ChatWindow({
 
   const handleClick = async () => {
     if (!prompt.trim()) return;
-    //===========================================
+
     if (!isAuthenticated) {
       setauthError(true);
-      setTimeout(() => {
-        setauthError(false);
-      }, 5000);
+      setTimeout(() => setauthError(false), 5000);
     }
-    //============================================
 
     setprevChats((prev) => [...prev, { content: prompt, role: "user" }]);
     setloading(true);
     controllerRef.current = new AbortController();
+
     try {
       const res = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/chat/ai`,
@@ -103,6 +248,8 @@ export default function ChatWindow({
         { content: aiReply, role: "assistant" },
       ]);
       setreply(aiReply);
+      // speak() is a no-op for normal text chat because voiceModeRef.current === false
+      speak(aiReply);
       setprompt("");
       setnewChat(false);
     } catch (err) {
@@ -126,6 +273,8 @@ export default function ChatWindow({
     setDropdownOpen(false);
     onLogout();
   };
+
+  // ===================== JSX =====================
 
   return (
     <section className="chatWindow">
@@ -170,24 +319,19 @@ export default function ChatWindow({
                       {user?.userName || user?.email || "User"}
                     </p>
                     <p>
-                      <Astroid size={18} />
-                      Upgraded Plan
+                      <Astroid size={18} /> Upgraded Plan
                     </p>
                     <p>
-                      <CircleUser size={18} />
-                      Personalization
+                      <CircleUser size={18} /> Personalization
                     </p>
                     <p>
-                      <Settings size={18} />
-                      Settings
+                      <Settings size={18} /> Settings
                     </p>
                     <p>
-                      <LifeBuoy size={18} />
-                      Help
+                      <LifeBuoy size={18} /> Help
                     </p>
                     <p className="logout-item" onClick={handleLogout}>
-                      <LogOut size={18} />
-                      Log out
+                      <LogOut size={18} /> Log out
                     </p>
                   </div>
                 )}
@@ -217,40 +361,31 @@ export default function ChatWindow({
       {/* ============ MESSAGES ============ */}
       <Chat />
 
-      {/* ============ VOICE LISTENING OVERLAY ============
-          Renders above the bottom input when mic is active.
-          Positioned absolute inside .chatWindow (which has position:relative).
-          Only mounts when isListining === true.
-      ================================================== */}
-      {/* =================== Auth flash error //================= */}
+      {/* ============ AUTH ERROR TOAST ============ */}
       {authError && (
         <div className="auth-error-toast">
           <div className="auth-error-toast__icon">
             <i className="fa-solid fa-lock" />
           </div>
-
           <div className="auth-error-toast__content">
             <h4>Login Required</h4>
             <p>You must log in to continue chatting.</p>
           </div>
-
           <button className="auth-error-toast__btn" onClick={onOpenLogin}>
             Log in
           </button>
         </div>
       )}
-      {/* ============================================================= */}
+
+      {/* ============ VOICE LISTENING OVERLAY ============ */}
       {isListining && (
         <div
           className="voice-overlay"
           role="dialog"
           aria-label="Voice input active"
         >
-          {/* Backdrop blur layer */}
           <div className="voice-overlay__backdrop" />
-
           <div className="voice-overlay__panel">
-            {/* ---- Sound-wave bars ---- */}
             <div className="voice-wave" aria-hidden="true">
               <span className="voice-wave__bar" />
               <span className="voice-wave__bar" />
@@ -260,8 +395,6 @@ export default function ChatWindow({
               <span className="voice-wave__bar" />
               <span className="voice-wave__bar" />
             </div>
-
-            {/* ---- Pulsing mic orb ---- */}
             <div className="voice-orb" aria-hidden="true">
               <div className="voice-orb__ring voice-orb__ring--1" />
               <div className="voice-orb__ring voice-orb__ring--2" />
@@ -274,14 +407,10 @@ export default function ChatWindow({
                 <i className="fa-solid fa-microphone" />
               </button>
             </div>
-
-            {/* ---- Status label ---- */}
             <p className="voice-label">
               <span className="voice-label__dot" />
               Listening…
             </p>
-
-            {/* ---- Cancel button ---- */}
             <button
               className="voice-cancel"
               onClick={handleStopListening}
@@ -311,7 +440,6 @@ export default function ChatWindow({
               aria-label="Chat input"
             />
 
-            {/* ---- CHANGED: active class added when isListining ---- */}
             <button
               onClick={handleMic}
               className={`mic-btn${isListining ? " mic-btn--active" : ""}`}
@@ -320,6 +448,17 @@ export default function ChatWindow({
             >
               <i className="fa-solid fa-microphone" />
             </button>
+
+            {voiceMode ? (
+              <button onClick={stopVoiceMode} className="voice-end-btn">
+                <AudioLines size={18} />
+                End
+              </button>
+            ) : (
+              <button onClick={startVoiceMode} className="voice-ai-btn">
+                <AudioLines size={20} />
+              </button>
+            )}
 
             {stopGeneration ? (
               <button

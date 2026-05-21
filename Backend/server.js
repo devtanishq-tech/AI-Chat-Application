@@ -30,7 +30,7 @@ const createConnection = async () => {
 
 // const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const app = express();
-const port = process.env.port || 8080;
+const port = 8080 || process.env.port;
 app.use(express.json()); // acting as a body parser
 app.use(cookieParser());
 app.use(
@@ -111,8 +111,8 @@ app.post("/signup", async (req, res) => {
     const token = Tokengeneration(newUser._id);
     res.cookie("token", token, {
       httpOnly: true,
-      sameSite: "none",
-      secure: true,
+      sameSite: "lax",
+      secure: false,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     res.status(200).json({ message: "User Data has been added" });
@@ -142,8 +142,8 @@ app.post("/login", async (req, res) => {
     const token = Tokengeneration(user._id);
     res.cookie("token", token, {
       httpOnly: true,
-      secure: true,
-      sameSite: "none",
+      secure: false,
+      sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     res.status(200).json({ message: "Logged in Successfully" });
@@ -167,6 +167,21 @@ app.post("/logout", async (req, res) => {
     res.status(500).json({
       message: "Server Error",
     });
+  }
+});
+app.get("/auth/me", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+    res
+      .status(200)
+      .json({ success: true, message: "Authorized go Furhter", user });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 app.listen(port, () => {
