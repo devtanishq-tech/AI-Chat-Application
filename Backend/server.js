@@ -111,8 +111,8 @@ app.post("/signup", async (req, res) => {
     const token = Tokengeneration(newUser._id);
     res.cookie("token", token, {
       httpOnly: true,
-      sameSite: "lax",
-      secure: false,
+      sameSite: "none",
+      secure: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     res.status(200).json({ message: "User Data has been added" });
@@ -142,8 +142,8 @@ app.post("/login", async (req, res) => {
     const token = Tokengeneration(user._id);
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     res.status(200).json({ message: "Logged in Successfully" });
@@ -156,8 +156,8 @@ app.post("/logout", async (req, res) => {
   try {
     res.clearCookie("token", {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
     });
     res.status(200).json({
       message: "Logout Successful",
