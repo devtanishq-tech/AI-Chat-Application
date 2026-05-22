@@ -48,6 +48,20 @@ export default function ChatWindow({
 
   const isAISpeakingRef = useRef(false);
   const transcriptRef = useRef("");
+  // ============= File upload =====================================
+  const inputref = useRef(null);
+  const [fileupload, setfileupload] = useState(null);
+  //===============File Functions=================================
+  const handleAttackFile = () => {
+    inputref.current.onClick();
+  };
+  const handelonChange = (e) => {
+    const file = e.target.file([0]);
+    if (!file) return;
+    setfileupload(file);
+  };
+
+  //=================================================================
 
   // ===========================Auth Error========================
   const [authError, setauthError] = useState(false);
@@ -122,7 +136,7 @@ export default function ChatWindow({
     setprompt("");
 
     setprevChats((prev) => [...prev, { content: message, role: "user" }]);
-    // this is where they have done the api calling  to backend when they send data message to the backend
+
     try {
       const res = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/chat/ai`,
@@ -426,15 +440,20 @@ export default function ChatWindow({
       <div className="bottomSection">
         <div className="chatInput">
           <div className="input-container">
-            {/* Attach File button  */}
-            {/* //======================================= */}
+            {/* ========================================= */}
             <button className="add-btn" aria-label="Attach file">
               <i className="fa-solid fa-plus" />
             </button>
-            {/* ======================================= */}
-
+            {/* //=================================== */}
             <input
               type="file"
+              accept="image/*,.pdf,.doc,.docx"
+              ref={inputref}
+              style={{ display: "none" }}
+              onChange={handelonChange}
+            ></input>
+
+            <input
               value={prompt}
               onChange={onchange}
               onKeyDown={(e) =>
