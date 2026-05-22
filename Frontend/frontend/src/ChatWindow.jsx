@@ -122,7 +122,7 @@ export default function ChatWindow({
     setprompt("");
 
     setprevChats((prev) => [...prev, { content: message, role: "user" }]);
-
+    // this is where they have done the api calling  to backend when they send data message to the backend
     try {
       const res = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/chat/ai`,
@@ -426,11 +426,15 @@ export default function ChatWindow({
       <div className="bottomSection">
         <div className="chatInput">
           <div className="input-container">
+            {/* Attach File button  */}
+            {/* //======================================= */}
             <button className="add-btn" aria-label="Attach file">
               <i className="fa-solid fa-plus" />
             </button>
+            {/* ======================================= */}
 
             <input
+              type="file"
               value={prompt}
               onChange={onchange}
               onKeyDown={(e) =>
