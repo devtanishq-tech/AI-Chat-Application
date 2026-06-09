@@ -13,15 +13,17 @@
   "description": "",
   "dependencies": {
     "@google/genai": "^1.50.1",
+    "@tavily/core": "^0.7.5",
     "axios": "^1.15.2",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "groq-sdk": "^1.1.2",
+    "groq-sdk": "^1.2.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.5.0",
+    "multer": "^2.1.1",
     "node": "^24.15.0",
     "openai": "^6.34.0"
   }

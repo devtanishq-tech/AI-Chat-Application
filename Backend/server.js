@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import cookieParser from "cookie-parser";
 import { Groq_API } from "./utils/groq.js";
+import multer from "multer";
 //==================routes folder import //=================================
 import chat from "./routes/chat.js";
 //=========================MODELS//=====================================
@@ -31,6 +32,8 @@ const createConnection = async () => {
 // const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const app = express();
 const port = 8080 || process.env.port;
+// this is where file come from frontend get stored inside the folder of uploads
+const upload = multer({ dest: "uploads/" });
 app.use(express.json()); // acting as a body parser
 app.use(cookieParser());
 app.use(
@@ -49,40 +52,60 @@ app.get("/", (req, res) => {
 });
 //======================MAIN ROUTES========================================================
 app.use("/chat", chat);
-app.post("/chat/ai", authMiddleware, async (req, res) => {
-  try {
-    const userMessage = req.body.message;
-    const { threadID } = req.body;
-    if (!threadID || !userMessage) {
-      return res.status(500).json({ err: "missing required Fields" });
-    }
-    let threadData = await threads.findOne({
-      threadId: threadID,
-      user: req.user.id,
-    });
-    //========================================================================
-    // if threadData does not exist then , add  create new Thread acting like a new message
-    if (!threadData) {
-      threadData = new threads({
-        user: req.user.id,
+app.post(
+  "/chat/ai",
+  authMiddleware,
+  upload.single("file"),
+  async (req, res) => {
+    try {
+      console.log(req.body);
+      console.log(req.file); // multipart data or upload file or photo data
+      const userMessage = req.body.message;
+      const { threadID } = req.body;
+      if (!threadID || (!userMessage && !req.file)) {
+        return res.status(500).json({ err: "missing required Fields" });
+      }
+      let threadData = await threads.findOne({
         threadId: threadID,
-        title: userMessage,
-        messages: [{ role: "user", content: userMessage }],
+        user: req.user.id,
       });
-    } else {
-      threadData.messages.push({ role: "user", content: userMessage });
+      //========================================================================
+      // if threadData does not exist then , add  create new Thread acting like a new message
+      if (!threadData) {
+        threadData = new threads({
+          user: req.user.id,
+          threadId: threadID,
+          title: userMessage || req.file.originalname,
+          messages: [
+            {
+              role: "user",
+              content: userMessage || `📎 ${req.file.originalname}`,
+            },
+          ],
+        });
+      } else {
+        threadData.messages.push({
+          role: "user",
+          content: userMessage || `📎 ${req.file.originalname}`,
+        });
+      }
+      //====================================================================
+      let aireply = "";
+      if (req.file) {
+        aireply = "File Receieved Successfully";
+      } else {
+        aireply = await Groq_API(userMessage);
+      }
+      threadData.messages.push({ role: "assistant", content: aireply });
+      threadData.updatedAt = new Date();
+      await threadData.save();
+      res.status(200).json({ reply: aireply });
+    } catch (err) {
+      console.log(err);
+      res.status(500).json(err.message);
     }
-    //====================================================================
-    const response = await Groq_API(userMessage);
-    threadData.messages.push({ role: "assistant", content: response });
-    threadData.updatedAt = new Date();
-    await threadData.save();
-    res.status(200).json({ reply: response });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json(err.message);
-  }
-});
+  },
+);
 //================================Login and Sign up Routes //===================================
 app.post("/signup", async (req, res) => {
   try {
@@ -111,8 +134,8 @@ app.post("/signup", async (req, res) => {
     const token = Tokengeneration(newUser._id);
     res.cookie("token", token, {
       httpOnly: true,
-      sameSite: "none",
-      secure: true,
+      sameSite: "lax",
+      secure: false,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     res.status(200).json({ message: "User Data has been added" });
@@ -142,8 +165,8 @@ app.post("/login", async (req, res) => {
     const token = Tokengeneration(user._id);
     res.cookie("token", token, {
       httpOnly: true,
-      secure: true,
-      sameSite: "none",
+      secure: false,
+      sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     res.status(200).json({ message: "Logged in Successfully" });
@@ -156,8 +179,8 @@ app.post("/logout", async (req, res) => {
   try {
     res.clearCookie("token", {
       httpOnly: true,
-      secure: true,
-      sameSite: "none",
+      secure: false,
+      sameSite: "lax",
     });
     res.status(200).json({
       message: "Logout Successful",

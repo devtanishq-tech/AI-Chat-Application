@@ -37,38 +37,32 @@ export default function ChatWindow({
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   // ===================== Mic / Voice =====================
-
   const recognitionRef = useRef(null);
   const [isListining, setisListining] = useState(false);
-
-  // voiceMode STATE drives the UI (button label, overlay, etc.)
   const [voiceMode, setVoiceMode] = useState(false);
-  // voiceModeRef is read inside callbacks/closures so they never go stale
   const voiceModeRef = useRef(false);
-
   const isAISpeakingRef = useRef(false);
   const transcriptRef = useRef("");
-  // ============= File upload =====================================
-  const inputref = useRef(null);
-  const [fileupload, setfileupload] = useState(null);
-  //===============File Functions=================================
-  const handleAttackFile = () => {
-    inputref.current.onClick();
+
+  // ===================== File Upload =====================
+  const fileInputRef = useRef(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+
+  const handleAttachClick = () => {
+    fileInputRef.current.click();
   };
-  const handelonChange = (e) => {
-    const file = e.target.file([0]);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
     if (!file) return;
-    setfileupload(file);
+    setSelectedFile(file);
   };
+  // =======================================================
 
-  //=================================================================
-
-  // ===========================Auth Error========================
+  // ===================== Auth Error ======================
   const [authError, setauthError] = useState(false);
 
-  // ========================================================
-  // ================ Speech Synthesis ======================
-
+  // ===================== Speech Synthesis ================
   const voicesRef = useRef([]);
 
   useEffect(() => {
@@ -82,9 +76,8 @@ export default function ChatWindow({
     };
   }, []);
 
-  // speak() only fires in Voice AI mode — checked via ref so it's never stale
   const speak = (text) => {
-    if (!voiceModeRef.current) return; // ← restrict to Voice AI mode only
+    if (!voiceModeRef.current) return;
     if (!window.speechSynthesis || !text) return;
 
     window.speechSynthesis.cancel();
@@ -109,14 +102,12 @@ export default function ChatWindow({
       voices.find((v) => v.lang === "en-US");
 
     if (preferredVoice) utterance.voice = preferredVoice;
+
     utterance.onstart = () => {
-      // here isAispeakingRef is useREF Variable where we used  this to assing is Ai speaking or not
-      //Acting as YES OR NO
       isAISpeakingRef.current = true;
     };
     utterance.onend = () => {
       isAISpeakingRef.current = false;
-      // After AI finishes speaking, restart listening — use ref, never stale
       if (voiceModeRef.current && recognitionRef.current) {
         setTimeout(() => {
           recognitionRef.current.start();
@@ -127,14 +118,11 @@ export default function ChatWindow({
     window.speechSynthesis.speak(utterance);
   };
 
-  // ========================================================
-  // ========== send Voice Message Function =================
-
+  // =================== Send Voice Message ================
   const sendVoiceMessage = async (message) => {
     if (!message.trim()) return;
 
     setprompt("");
-
     setprevChats((prev) => [...prev, { content: message, role: "user" }]);
 
     try {
@@ -145,26 +133,18 @@ export default function ChatWindow({
       );
 
       const aiReply = res.data.reply;
-
       setprevChats((prev) => [
         ...prev,
         { content: aiReply, role: "assistant" },
       ]);
-
       setreply(aiReply);
-      speak(aiReply); // only fires if voiceModeRef.current === true
+      speak(aiReply);
     } catch (err) {
       console.log(err);
     }
   };
 
-  // ========================================================
-  // ========== Speech Recognition — set up ONCE ============
-  //
-  // We no longer depend on [voiceMode] so the effect never
-  // re-runs and the recognition instance is never recreated.
-  // All branching logic reads from voiceModeRef (always fresh).
-
+  // =================== Speech Recognition ================
   useEffect(() => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -185,43 +165,37 @@ export default function ChatWindow({
       }
       transcriptRef.current = transcript;
 
-      // Read from REF — never a stale closure value
       if (!voiceModeRef.current) {
-        // AI Dictation / plain mic: just fill the input
         setprompt(transcript);
         return;
       }
 
-      // Voice AI mode: auto-send when the utterance is final
       if (event.results[event.results.length - 1].isFinal) {
         sendVoiceMessage(transcript);
       }
     };
 
-    // Cleanup on unmount
     return () => {
       recognitionRef.current?.stop();
     };
-  }, []); // ← empty deps: set up once, refs handle the rest
+  }, []);
 
-  // ========================================================
-  // ======= Mic / Voice mode controls ======================
-
+  // =================== Mic / Voice Controls ==============
   const handleMic = () => {
-    if (voiceModeRef.current) return; // don't interfere with Voice AI mode
+    if (voiceModeRef.current) return;
     setprompt("");
     recognitionRef.current?.start();
   };
 
   const startVoiceMode = () => {
-    voiceModeRef.current = true; // update ref FIRST so onresult sees it immediately
-    setVoiceMode(true); // then update state for UI re-render
+    voiceModeRef.current = true;
+    setVoiceMode(true);
     setprompt("");
     recognitionRef.current?.start();
   };
 
   const stopVoiceMode = () => {
-    voiceModeRef.current = false; // update ref FIRST
+    voiceModeRef.current = false;
     setVoiceMode(false);
     recognitionRef.current?.stop();
     window.speechSynthesis.cancel();
@@ -232,39 +206,64 @@ export default function ChatWindow({
     setisListining(false);
   };
 
-  // ========================================================
-
+  // =======================================================
   const toggleDropdown = () => setDropdownOpen((prev) => !prev);
   const onchange = (e) => setprompt(e.target.value);
   const controllerRef = useRef(null);
 
+  // =================== Handle Click (Send) ===============
   const handleClick = async () => {
-    if (!prompt.trim()) return;
+    // ✅ Only block if BOTH prompt and file are empty
+    // Allows: text only | file only | text + file
+    if (!prompt.trim() && !selectedFile) return;
 
     if (!isAuthenticated) {
       setauthError(true);
       setTimeout(() => setauthError(false), 5000);
+      return; // ✅ Stop unauthenticated users from sending
     }
 
-    setprevChats((prev) => [...prev, { content: prompt, role: "user" }]);
+    // ✅ Build FormData — file is optional, appended only when selected
+    const formData = new FormData();
+    formData.append("message", prompt); // empty string if no text — fine
+    formData.append("threadID", currentID);
+    if (selectedFile) {
+      formData.append("file", selectedFile); // only attached when a file exists
+    }
+
+    // Show user message in chat (show filename if no text)
+    setprevChats((prev) => [
+      ...prev,
+      {
+        content: prompt.trim() || `📎 ${selectedFile?.name}`,
+        role: "user",
+      },
+    ]);
+
     setloading(true);
     controllerRef.current = new AbortController();
 
     try {
+      // ✅ axios auto-sets Content-Type: multipart/form-data with correct boundary
       const res = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/chat/ai`,
-        { threadID: currentID, message: prompt },
-        { withCredentials: true, signal: controllerRef.current.signal },
+        formData,
+        {
+          withCredentials: true,
+          signal: controllerRef.current.signal,
+          // ❌ Do NOT manually set Content-Type here — axios handles the boundary
+        },
       );
+
       const aiReply = res.data.reply;
       setprevChats((prev) => [
         ...prev,
         { content: aiReply, role: "assistant" },
       ]);
       setreply(aiReply);
-      // speak() is a no-op for normal text chat because voiceModeRef.current === false
-      speak(aiReply);
+      speak(aiReply); // no-op in text mode since voiceModeRef.current === false
       setprompt("");
+      setSelectedFile(null); // ✅ Clear file after successful send
       setnewChat(false);
     } catch (err) {
       if (err.name === "CanceledError") {
@@ -276,6 +275,7 @@ export default function ChatWindow({
       setloading(false);
     }
   };
+  // =======================================================
 
   const stopResponse = () => {
     if (controllerRef.current) controllerRef.current.abort();
@@ -289,7 +289,6 @@ export default function ChatWindow({
   };
 
   // ===================== JSX =====================
-
   return (
     <section className="chatWindow">
       {/* ============ NAVBAR ============ */}
@@ -436,22 +435,42 @@ export default function ChatWindow({
         </div>
       )}
 
+      {/* ============ FILE PREVIEW CHIP ============ */}
+      {/* ✅ Shows selected filename above the input, with a remove button */}
+      {selectedFile && (
+        <div className="file-preview-chip">
+          <i className="fa-solid fa-paperclip" />
+          <span>{selectedFile.name}</span>
+          <button
+            onClick={() => setSelectedFile(null)}
+            aria-label="Remove selected file"
+          >
+            <i className="fa-solid fa-xmark" />
+          </button>
+        </div>
+      )}
+
       {/* ============ BOTTOM INPUT ============ */}
       <div className="bottomSection">
         <div className="chatInput">
           <div className="input-container">
-            {/* ========================================= */}
-            <button className="add-btn" aria-label="Attach file">
+            {/* ✅ Attach button — triggers the hidden file input */}
+            <button
+              className="add-btn"
+              aria-label="Attach file"
+              onClick={handleAttachClick}
+            >
               <i className="fa-solid fa-plus" />
             </button>
-            {/* //=================================== */}
+
+            {/* ✅ Hidden file input — wired to fileInputRef */}
             <input
               type="file"
               accept="image/*,.pdf,.doc,.docx"
-              ref={inputref}
+              ref={fileInputRef}
               style={{ display: "none" }}
-              onChange={handelonChange}
-            ></input>
+              onChange={handleFileChange}
+            />
 
             <input
               value={prompt}
