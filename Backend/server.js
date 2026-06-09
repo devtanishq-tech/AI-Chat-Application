@@ -71,32 +71,49 @@ app.post(
       });
       //========================================================================
       // if threadData does not exist then , add  create new Thread acting like a new message
+      //=================================================================================================
+      // if (!threadData) {
+      //   threadData = new threads({
+      //     user: req.user.id,
+      //     threadId: threadID,
+      //     title: userMessage || req.file.originalname,
+      //     messages: [
+      //       {
+      //         role: "user",
+      //         content: userMessage || `📎 ${req.file.originalname}`,
+      //       },
+      //     ],
+      //   });
+      // } else {
+      //   threadData.messages.push({
+      //     role: "user",
+      //     content: userMessage || `📎 ${req.file.originalname}`,
+      //   });
+      // }
       if (!threadData) {
         threadData = new threads({
           user: req.user.id,
           threadId: threadID,
-          title: userMessage || req.file.originalname,
-          messages: [
-            {
-              role: "user",
-              content: userMessage || `📎 ${req.file.originalname}`,
-            },
-          ],
-        });
-      } else {
-        threadData.messages.push({
-          role: "user",
-          content: userMessage || `📎 ${req.file.originalname}`,
+          title: userMessage || req.file?.originalname || "New Chat",
+          messages: [],
         });
       }
+      //============================================================================
       //====================================================================
       let aireply = "";
       if (req.file) {
         aireply = "File Receieved Successfully";
       } else {
-        aireply = await Groq_API(userMessage);
+        aireply = await Groq_API(userMessage, threadID, req.user.id);
       }
-      threadData.messages.push({ role: "assistant", content: aireply });
+      threadData.messages.push({
+        role: "user",
+        content: userMessage || `📎 ${req.file.originalname}`,
+      });
+      threadData.messages.push({
+        role: "assistant",
+        content: aireply,
+      });
       threadData.updatedAt = new Date();
       await threadData.save();
       res.status(200).json({ reply: aireply });
@@ -134,8 +151,8 @@ app.post("/signup", async (req, res) => {
     const token = Tokengeneration(newUser._id);
     res.cookie("token", token, {
       httpOnly: true,
-      sameSite: "lax",
-      secure: false,
+      sameSite: "none",
+      secure: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     res.status(200).json({ message: "User Data has been added" });
@@ -165,8 +182,8 @@ app.post("/login", async (req, res) => {
     const token = Tokengeneration(user._id);
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     res.status(200).json({ message: "Logged in Successfully" });
@@ -179,8 +196,8 @@ app.post("/logout", async (req, res) => {
   try {
     res.clearCookie("token", {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
     });
     res.status(200).json({
       message: "Logout Successful",
