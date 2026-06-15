@@ -4,6 +4,7 @@ import { tavily } from "@tavily/core";
 import axios from "axios";
 import { type } from "node:os";
 import { threads } from "../models/OverAllScheam.js";
+import { convertProcessSignalToExitCode } from "node:util";
 
 dotenv.config();
 
@@ -21,80 +22,54 @@ const tvly = tavily({
 const SYSTEM_PROMPT = {
   role: "system",
   content: `
-                You are a smart AI assistant.
+You are a helpful AI assistant.
 
-                You have access to the following tools:
+Available tools:
 
-                web_Search(query)
-                Use for:
-                Current events
-                Latest news
-                Real-time information
-                Information that may have changed over time
-                Facts you are unsure about
-                weather_Fnc({ city })
-                Use only when the user asks about weather conditions, forecasts, temperature, humidity, rain, or climate in a specific city.
+1. web_Search(query)
+   Use for:
+   - Current events
+   - Latest news
+   - Real-time information
+   - Information that may have changed over time
 
-                Decision Rules:
+2. weather_Fnc(city)
+   Use only for weather-related questions.
 
-                Answer directly using your own knowledge when:
-                The question is general knowledge.
-                The answer is stable and unlikely to change.
-                The answer is commonly known.
-                No real-time information is required.
-                Use web_Search when:
-                The user asks for current, latest, recent, live, today, this week, this month, or breaking information.
-                The answer may have changed since your training.
-                You are uncertain about the answer.
-                Use weather_Fnc when:
-                The user asks for weather information.
-                The user asks about temperature, rain, humidity, forecast, climate, or current weather.
-                Never use web_Search for:
-                Basic math calculations.
-                Programming questions.
-                General knowledge you already know confidently.
-                Current date or time if available from system context.
-                Never mention tool names to the user unless specifically asked.
-                When a tool is required:
-                Call the appropriate tool.
-                Wait for the tool result.
-                Use the result to generate a natural language response.
+Rules:
 
-                Examples:
+- Answer directly when the answer is general knowledge.
+- Use tools only when necessary.
+- After receiving a tool result, answer the user.
+- Do not repeatedly call the same tool for the same question.
+- Prefer answering after the first tool result.
+- Never generate tool calls as text.
+- Use the tool-calling API only.
+- Keep answers concise and accurate.
 
-                User: Who is the Prime Minister of India?
-                Assistant:
-                Narendra Modi is the Prime Minister of India.
 
-                User: What is React?
-                Assistant:
-                React is a JavaScript library used for building user interfaces.
+#IMPORTANT:
 
-                User: What is the current weather in Delhi?
-                Assistant:
-                (Call weather_Fnc with city="Delhi")
+If the answer can be derived from previous conversation messages,
+do NOT call any tool.
 
-                User: What's the weather in Mumbai right now?
-                Assistant:
-                (Call weather_Fnc with city="Mumbai")
+Use existing conversation context first.
 
-                User: Latest IT news today
-                Assistant:
-                (Call web_Search with query="latest IT news today")
+Only call tools for NEW information that is unavailable in the conversation.
 
-                User: Who won the latest IPL final?
-                Assistant:
-                (Call web_Search because the result may have changed)
+Examples:
 
-                User: What is 245 × 89?
-                Assistant:
-                Answer directly without using any tool.
+User: What is React?
+Assistant: Answer directly.
 
-                Important:
-                Do not generate tool calls as text.
-                Do not output XML, JSON, or pseudo function calls.
-                If a tool is needed, use the tool-calling mechanism provided by the API.
-                Otherwise answer normally.
+User: Latest AI news today
+Assistant: Use web_Search.
+
+User: Weather in Delhi
+Assistant: Use weather_Fnc.
+
+User: 25 * 45
+Assistant: Answer directly.
 `,
 };
 
@@ -103,13 +78,18 @@ async function web_Search({ query }) {
   try {
     console.log("🌐 Web Search Called:", query);
     const response = await tvly.search(query, {
-      maxResults: 1,
+      maxResults: 3,
+      includeAnswer: true,
     });
-    const finalAnswer = response.results
-      .map((item) => item.content)
-      .join("\n\n");
-
-    return finalAnswer;
+    console.log(`Printation of respond ....`);
+    return JSON.stringify({
+      answer: response.answer,
+      sources: response.results.map((item) => ({
+        title: item.title,
+        score: item.score,
+        url: item.url,
+      })),
+    });
   } catch (err) {
     console.error("Tavily Error:", err);
     return "Unable to retrieve web search results.";
@@ -153,15 +133,19 @@ const Groq_API = async (userMessage, threadID, userID) => {
     if (!userMessage) {
       throw new Error("Message is required");
     }
+
     const threadData = await threads.findOne({
       threadId: threadID,
       user: userID,
     });
     // on  each request we are creating a history array of object which fetches data from the databse , and we passes them into the message array
     const history =
-      threadData?.messages.slice(-20).map((current) => ({
+      threadData?.messages.slice(-5).map((current) => ({
         role: current.role,
         content: current.content,
+        tool_calls: current.tool_calls,
+        tool_call_id: current.tool_call_id,
+        name: current.name,
       })) || [];
     const messages = [
       SYSTEM_PROMPT,
@@ -181,11 +165,15 @@ const Groq_API = async (userMessage, threadID, userID) => {
     ) {
       return new Date().toDateString();
     }
-
+    if (query.includes("current Prime Minister of India ")) {
+      return "";
+    }
+    let searchCount = 0;
+    let MAX_TOOL_CALL = 2;
     while (true) {
       const completion = await groq.chat.completions.create({
         // model: "llama-3.3-70b-versatile",
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         messages, // this is where messages array passed  to the llm model;
         temperature: 0,
         frequency_penalty: 0,
@@ -237,16 +225,20 @@ const Groq_API = async (userMessage, threadID, userID) => {
       // debug //====
       console.log(JSON.stringify(completion.choices[0].message, null, 2));
       //==================
-      messages.push(assistantMessage); // here we convert the
+      messages.push({
+        role: assistantMessage.role,
+        content: assistantMessage.content,
+        tool_calls: assistantMessage.tool_calls,
+      });
       const toolCalls = assistantMessage.tool_calls;
       // ==================== NO TOOL CALL ====================
       if (!toolCalls || toolCalls.length === 0) {
         return assistantMessage.content;
       }
-
       // ==================== TOOL CALL ====================
       for (const tool of toolCalls) {
         const functionName = tool.function.name;
+        console.log(tool);
         const functionArgs = JSON.parse(tool.function.arguments);
         console.log(functionArgs);
 
@@ -261,6 +253,10 @@ const Groq_API = async (userMessage, threadID, userID) => {
         }
 
         if (functionName === "web_Search") {
+          searchCount++;
+          if (searchCount > MAX_TOOL_CALL) {
+            return "Unable to verify the information reliably.";
+          }
           const toolResult = await web_Search(functionArgs);
           messages.push({
             tool_call_id: tool.id,
